@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Controle de LED e Monitoramento de Temperatura</title>
+    <script>
+      async function ligarLED() {
+        await fetch("/led/on");
+      }
+
+      async function desligarLED() {
+        await fetch("/led/off");
+      }
+
+      async function atualizarDados() {
+        const response = await fetch("/sensor/dados");
+        const result = await response.json();
+        document.getElementById("temperatura").innerHTML =
+          "Temperatura: " + result.temp + " °C";
+        document.getElementById("umidade").innerHTML =
+          "Umidade: " + result.humi + " %";
+      }
+
+      setInterval(atualizarDados, 2000);
+    </script>
+  </head>
+  <body>
+    <h1>Controle de LED e Monitoramento de Temperatura</h1>
+    <p id="temperatura">Temperatura: N/A</p>
+    <p id="umidade">Umidade: N/A</p>
+    <button onclick="ligarLED()">Ligar LED</button>
+    <button onclick="desligarLED()">Desligar LED</button>
+  </body>
+</html>
