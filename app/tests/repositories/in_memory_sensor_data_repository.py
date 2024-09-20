@@ -1,6 +1,6 @@
 from typing import List, Optional
-from src.domain.enterprise.entities.sensor_data import SensorData
-from src.domain.application.repositories.sensor_data_repository import SensorDataRepository
+from app.src.domain.enterprise.entities.sensor_data import SensorData
+from app.src.domain.application.repositories.sensor_data_repository import SensorDataRepository
 
 
 class InMemorySensorDataRepository(SensorDataRepository):

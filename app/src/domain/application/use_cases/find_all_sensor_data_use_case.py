@@ -1,5 +1,6 @@
-from src.core.utils.either import right
-from src.domain.application.repositories.sensor_data_repository import SensorDataRepository
+from app.src.core.utils.either import right
+from app.src.domain.application.repositories.sensor_data_repository import SensorDataRepository
+
 
 class FindAllSensorDataUseCase:
     def __init__(self, repository: SensorDataRepository):

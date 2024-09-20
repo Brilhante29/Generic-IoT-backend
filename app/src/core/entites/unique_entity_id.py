@@ -1,6 +1,6 @@
 import uuid
 
-from src.core.entites.entity_id import EntityID
+from app.src.core.entites.entity_id import EntityID
 
 
 class UniqueEntityID(EntityID):

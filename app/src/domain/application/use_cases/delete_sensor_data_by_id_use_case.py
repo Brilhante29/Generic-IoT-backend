@@ -1,14 +1,18 @@
-from src.core.errors.invalid_input_error import InvalidInputError
-from src.core.utils.either import left, right
-from src.domain.application.repositories.sensor_data_repository import SensorDataRepository
-from src.domain.enterprise.entities.sensor_data import SensorData
+from app.src.core.errors.invalid_input_error import InvalidInputError
+from app.src.core.errors.resource_not_found_error import ResourceNotFoundError
+from app.src.core.utils.either import left, right
+from app.src.domain.application.repositories.sensor_data_repository import SensorDataRepository
 
-class SaveSensorDataUseCase:
+
+class DeleteSensorDataUseCase:
     def __init__(self, repository: SensorDataRepository):
         self.repository = repository
 
-    def execute(self, sensor_data: SensorData):
-        if not sensor_data:
-            return left(InvalidInputError("SensorData must be provided"))
-        saved_data = self.repository.save(sensor_data)
-        return right(saved_data)
+    def execute(self, id: int):
+        if not id:
+            return left(InvalidInputError("ID must be provided"))
+        sensor_data = self.repository.find_by_id(id)
+        if sensor_data is None:
+            return left(ResourceNotFoundError(f"No sensor data found for ID: {id}"))
+        self.repository.delete(id)
+        return right(f"Sensor data with ID: {id} has been deleted")
