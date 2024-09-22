@@ -1,5 +1,5 @@
 from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 import paho.mqtt.client as mqtt
 import threading
 from pymongo import MongoClient
@@ -80,21 +80,17 @@ mqtt_thread = threading.Thread(target=start_mqtt)
 mqtt_thread.daemon = True
 mqtt_thread.start()
 
-@app.get("/", response_class=HTMLResponse)
-async def home():
+# Helper function to render a page
+def render_page(content: str):
     html_content = f"""
     <!DOCTYPE html>
     <html lang="pt-br">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Controle de LED e Monitoramento de Temperatura</title>
-
-            <!-- Bootstrap CSS -->
+            <title>Sistema Anti-Mofo</title>
             <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-            <!-- Google Material Icons -->
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
             <style>
                 body {{
                     font-family: 'Arial', sans-serif;
@@ -103,10 +99,8 @@ async def home():
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
-                    background-color: #f0f0f0;  /* Leve tom de cinza */
+                    background-color: #f0f0f0;
                 }}
-                
-                /* Sidebar styling */
                 .sidebar {{
                     height: 100%;
                     width: 80px;
@@ -148,7 +142,6 @@ async def home():
                 .sidebar a:hover {{
                     background-color: #444;
                 }}
-
                 .container {{
                     text-align: center;
                     width: 100%;
@@ -158,20 +151,17 @@ async def home():
                     border-radius: 10px;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                 }}
-                
                 .data-row {{
                     display: flex;
                     justify-content: space-around;
                     margin-bottom: 20px;
                 }}
-
                 .data-display {{
                     font-size: 36px;
                     font-weight: 300;
                     color: #333;
                     margin: 0 20px;
                 }}
-                
                 .data-icon {{
                     font-size: 50px;
                     color: #1E90FF;
@@ -227,21 +217,13 @@ async def home():
                 }}
             </style>
             <script>
-                async function ligarLED() {{
-                    await fetch('/led/on');
-                    document.getElementById("ledState").innerHTML = "LED Ligado";
-                }}
-
-                async function desligarLED() {{
-                    await fetch('/led/off');
-                    document.getElementById("ledState").innerHTML = "LED Desligado";
-                }}
-
                 async function toggleLED(checkbox) {{
                     if (checkbox.checked) {{
-                        ligarLED();
+                        await fetch('/led/on');
+                        document.getElementById("ledState").innerHTML = "LED Ligado";
                     }} else {{
-                        desligarLED();
+                        await fetch('/led/off');
+                        document.getElementById("ledState").innerHTML = "LED Desligado";
                     }}
                 }}
 
@@ -252,50 +234,84 @@ async def home():
                     document.getElementById("umidade").innerHTML = result.humidity + "%";
                 }}
 
-                setInterval(atualizarDados, 2000);  // Atualizar os dados a cada 2 segundos
+                setInterval(atualizarDados, 2000);
             </script>
         </head>
         <body>
-            <!-- Sidebar -->
             <div class="sidebar">
-                <a href="/"><i class="material-icons">home</i> <span>Home</span></a>
-                <a href="/monitoramento"><i class="material-icons">show_chart</i> <span>Monitoramento</span></a>
-                <a href="/configuracoes"><i class="material-icons">settings</i> <span>Configurações</span></a>
-                <a href="/sobre"><i class="material-icons">info</i> <span>Sobre</span></a>
+                <a href="/sistema-antimofo/home"><i class="material-icons">home</i> <span>Home</span></a>
+                <a href="/sistema-antimofo/monitoramento"><i class="material-icons">show_chart</i> <span>Monitoramento</span></a>
+                <a href="/sistema-antimofo/configuracoes"><i class="material-icons">settings</i> <span>Configurações</span></a>
+                <a href="/sistema-antimofo/sobre"><i class="material-icons">info</i> <span>Sobre</span></a>
             </div>
-
-            <!-- Main content -->
-            <div class="container">
-                <!-- Temperature and Humidity in one row -->
-                <div class="data-row">
-                    <!-- Temperature -->
-                    <div class="data-display">
-                        <i class="material-icons data-icon">thermostat</i>
-                        <p id="temperatura">N/A°C</p>
-                    </div>
-                    <!-- Humidity -->
-                    <div class="data-display">
-                        <i class="material-icons data-icon">opacity</i>
-                        <p id="umidade">N/A%</p>
-                    </div>
-                </div>
-
-                <!-- LED Toggle -->
-                <label class="toggle-switch">
-                    <input type="checkbox" onclick="toggleLED(this)">
-                    <span class="slider round"></span>
-                </label>
-                <p id="ledState">LED Desligado</p>
+            <div class="container" id="main-content">
+                {content}
             </div>
-
-            <!-- Bootstrap JS (optional) -->
-            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         </body>
     </html>
     """
     return HTMLResponse(content=html_content)
+
+# Default route
+@app.get("/sistema-antimofo", response_class=HTMLResponse)
+async def root():
+    return RedirectResponse(url="/sistema-antimofo/home")
+
+# Home page
+@app.get("/sistema-antimofo/home", response_class=HTMLResponse)
+async def home():
+    content = """
+        <!-- Temperature and Humidity in one row -->
+        <div class="data-row">
+            <!-- Temperature -->
+            <div class="data-display">
+                <i class="material-icons data-icon">thermostat</i>
+                <p id="temperatura">N/A°C</p>
+            </div>
+            <!-- Humidity -->
+            <div class="data-display">
+                <i class="material-icons data-icon">opacity</i>
+                <p id="umidade">N/A%</p>
+            </div>
+        </div>
+
+        <!-- LED Toggle -->
+        <div style="margin-top: 20px;">
+            <label class="toggle-switch">
+                <input type="checkbox" onclick="toggleLED(this)">
+                <span class="slider round"></span>
+            </label>
+            <p id="ledState" style="margin-top: 10px;">LED Desligado</p>
+        </div>
+    """
+    return render_page(content)
+
+# Monitoramento page
+@app.get("/sistema-antimofo/monitoramento", response_class=HTMLResponse)
+async def monitoramento():
+    content = """
+    <h1>Monitoramento de Sensores</h1>
+    <p>Exibição de temperatura, umidade e controle de LED.</p>
+    """
+    return render_page(content)
+
+# Configurações page
+@app.get("/sistema-antimofo/configuracoes", response_class=HTMLResponse)
+async def configuracoes():
+    content = """
+    <h1>Configurações do Sistema</h1>
+    <p>Gerencie as configurações do sistema anti-mofo e LED.</p>
+    """
+    return render_page(content)
+
+# Sobre page
+@app.get("/sistema-antimofo/sobre", response_class=HTMLResponse)
+async def sobre():
+    content = """
+    <h1>Sobre o Sistema</h1>
+    <p>Informações sobre o sistema de controle anti-mofo.</p>
+    """
+    return render_page(content)
 
 # API para controle do LED
 @app.get("/led/{state}")
