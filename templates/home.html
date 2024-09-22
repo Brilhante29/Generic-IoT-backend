@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Sistema Anti-Mofo{% endblock %}
+
+{% block content %}
+    <!-- Temperature and Humidity in one row -->
+    <div class="data-row">
+        <!-- Temperature -->
+        <div class="data-display">
+            <i class="material-icons data-icon">thermostat</i>
+            <p id="temperatura">{{ temperature }}°C</p>
+        </div>
+        <!-- Humidity -->
+        <div class="data-display">
+            <i class="material-icons data-icon">opacity</i>
+            <p id="umidade">{{ humidity }}%</p>
+        </div>
+    </div>
+
+    <!-- LED Toggle -->
+    <div style="margin-top: 20px;">
+        <label class="toggle-switch">
+            <input type="checkbox" onclick="toggleLED(this)">
+            <span class="slider round"></span>
+        </label>
+        <p id="ledState" style="margin-top: 10px;">LED {{ led_state }}</p>
+    </div>
+{% endblock %}

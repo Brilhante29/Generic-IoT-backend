@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Anti-Mofo{% endblock %}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .sidebar {
+            height: 100%;
+            width: 80px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            transition: width 0.4s;
+            overflow: hidden;
+        }
+        .sidebar:hover {
+            width: 200px;
+        }
+        .sidebar i {
+            font-size: 36px;
+            color: white;
+            margin: 20px 0;
+        }
+        .sidebar span {
+            display: none;
+            font-size: 18px;
+            color: white;
+            white-space: nowrap;
+            padding-left: 10px;
+        }
+        .sidebar:hover span {
+            display: inline-block;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding-left: 10px;
+        }
+        .sidebar a:hover {
+            background-color: #444;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="/sistema-antimofo/home"><i class="material-icons">home</i> <span>Home</span></a>
+        <a href="/sistema-antimofo/monitoramento"><i class="material-icons">show_chart</i> <span>Monitoramento</span></a>
+        <a href="/sistema-antimofo/configuracoes"><i class="material-icons">settings</i> <span>Configurações</span></a>
+        <a href="/sistema-antimofo/sobre"><i class="material-icons">info</i> <span>Sobre</span></a>
+    </div>
+
+    <!-- Main content -->
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
