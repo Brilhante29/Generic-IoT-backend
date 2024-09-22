@@ -66,6 +66,71 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+        .data-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        
+        .data-display {
+            font-size: 36px;
+            font-weight: 300;
+            color: #333;
+            margin: 0 20px;
+        }
+        
+        .data-icon {
+            font-size: 50px;
+            color: #1E90FF;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 100px;
+            height: 48px;
+            margin-top: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+            border: 2px solid #ccc;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 40px;
+            width: 40px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #1E90FF;
+            border-color: #1E90FF;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(52px);
+        }
+        
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 </head>
