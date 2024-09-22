@@ -80,58 +80,115 @@ mqtt_thread = threading.Thread(target=start_mqtt)
 mqtt_thread.daemon = True
 mqtt_thread.start()
 
-# Main control page
 @app.get("/", response_class=HTMLResponse)
-async def control_page():
+async def home():
     html_content = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-br">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Controle de LED e Monitoramento de Temperatura</title>
+
+            <!-- Bootstrap CSS -->
+            <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Google Material Icons -->
+            <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; display: flex; }}
+                body {{
+                    font-family: 'Arial', sans-serif;
+                    margin: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    background-color: #f0f0f0;  /* Leve tom de cinza */
+                }}
                 
+                /* Sidebar styling */
                 .sidebar {{
                     height: 100%;
-                    width: 200px;
+                    width: 80px;
                     position: fixed;
                     top: 0;
                     left: 0;
                     background-color: #333;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                     padding-top: 20px;
-                    color: white;
+                    transition: width 0.4s;
+                    overflow: hidden;
                 }}
-
-                .sidebar a {{
-                    padding: 10px 15px;
-                    text-decoration: none;
+                .sidebar:hover {{
+                    width: 200px;
+                }}
+                .sidebar i {{
+                    font-size: 36px;
+                    color: white;
+                    margin: 20px 0;
+                }}
+                .sidebar span {{
+                    display: none;
                     font-size: 18px;
                     color: white;
-                    display: block;
+                    white-space: nowrap;
+                    padding-left: 10px;
                 }}
-
+                .sidebar:hover span {{
+                    display: inline-block;
+                }}
+                .sidebar a {{
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    padding-left: 10px;
+                }}
                 .sidebar a:hover {{
-                    background-color: #575757;
+                    background-color: #444;
                 }}
 
-                .content {{
-                    margin-left: 220px;  /* Espaço para a sidebar */
-                    padding: 20px;
+                .container {{
+                    text-align: center;
+                    width: 100%;
+                    max-width: 500px;
+                    padding: 40px;
+                    background-color: #fff;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                }}
+                
+                .data-row {{
+                    display: flex;
+                    justify-content: space-around;
+                    margin-bottom: 20px;
+                }}
+
+                .data-display {{
+                    font-size: 36px;
+                    font-weight: 300;
+                    color: #333;
+                    margin: 0 20px;
+                }}
+                
+                .data-icon {{
+                    font-size: 50px;
+                    color: #1E90FF;
                 }}
 
                 .toggle-switch {{
                     position: relative;
                     display: inline-block;
-                    width: 60px;
-                    height: 34px;
+                    width: 100px;
+                    height: 48px;
+                    margin-top: 30px;
                 }}
-
                 .toggle-switch input {{
                     opacity: 0;
                     width: 0;
                     height: 0;
                 }}
-
                 .slider {{
                     position: absolute;
                     cursor: pointer;
@@ -141,37 +198,32 @@ async def control_page():
                     bottom: 0;
                     background-color: #ccc;
                     transition: 0.4s;
+                    border-radius: 34px;
+                    border: 2px solid #ccc;
                 }}
-
                 .slider:before {{
                     position: absolute;
                     content: "";
-                    height: 26px;
-                    width: 26px;
+                    height: 40px;
+                    width: 40px;
                     left: 4px;
                     bottom: 4px;
                     background-color: white;
                     transition: 0.4s;
-                }}
-
-                input:checked + .slider {{
-                    background-color: green;
-                }}
-
-                input:checked + .slider:before {{
-                    transform: translateX(26px);
-                }}
-
-                .slider.round {{
-                    border-radius: 34px;
-                }}
-
-                .slider.round:before {{
                     border-radius: 50%;
+                }}
+                input:checked + .slider {{
+                    background-color: #1E90FF;
+                    border-color: #1E90FF;
+                }}
+                input:checked + .slider:before {{
+                    transform: translateX(52px);
                 }}
 
                 #ledState {{
                     margin-top: 20px;
+                    font-size: 18px;
+                    color: #333;
                 }}
             </style>
             <script>
@@ -196,38 +248,54 @@ async def control_page():
                 async function atualizarDados() {{
                     const response = await fetch('/dados');
                     const result = await response.json();
-                    document.getElementById("temperatura").innerHTML = "Temperatura: " + result.temperature + " °C";
-                    document.getElementById("umidade").innerHTML = "Umidade: " + result.humidity + " %";
+                    document.getElementById("temperatura").innerHTML = result.temperature + "°C";
+                    document.getElementById("umidade").innerHTML = result.humidity + "%";
                 }}
 
                 setInterval(atualizarDados, 2000);  // Atualizar os dados a cada 2 segundos
             </script>
         </head>
         <body>
+            <!-- Sidebar -->
             <div class="sidebar">
-                <h2>Navegação</h2>
-                <a href="#">Home</a>
-                <a href="#">Monitoramento</a>
-                <a href="#">Configurações</a>
-                <a href="#">Sobre</a>
+                <a href="/"><i class="material-icons">home</i> <span>Home</span></a>
+                <a href="/monitoramento"><i class="material-icons">show_chart</i> <span>Monitoramento</span></a>
+                <a href="/configuracoes"><i class="material-icons">settings</i> <span>Configurações</span></a>
+                <a href="/sobre"><i class="material-icons">info</i> <span>Sobre</span></a>
             </div>
-            
-            <div class="content">
-                <h1>Controle de LED e Monitoramento de Temperatura</h1>
-                <p id="temperatura">Temperatura: N/A</p>
-                <p id="umidade">Umidade: N/A</p>
 
+            <!-- Main content -->
+            <div class="container">
+                <!-- Temperature and Humidity in one row -->
+                <div class="data-row">
+                    <!-- Temperature -->
+                    <div class="data-display">
+                        <i class="material-icons data-icon">thermostat</i>
+                        <p id="temperatura">N/A°C</p>
+                    </div>
+                    <!-- Humidity -->
+                    <div class="data-display">
+                        <i class="material-icons data-icon">opacity</i>
+                        <p id="umidade">N/A%</p>
+                    </div>
+                </div>
+
+                <!-- LED Toggle -->
                 <label class="toggle-switch">
                     <input type="checkbox" onclick="toggleLED(this)">
                     <span class="slider round"></span>
                 </label>
                 <p id="ledState">LED Desligado</p>
             </div>
+
+            <!-- Bootstrap JS (optional) -->
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         </body>
     </html>
     """
     return HTMLResponse(content=html_content)
-
 
 # API para controle do LED
 @app.get("/led/{state}")
@@ -248,6 +316,33 @@ async def control_led(state: str):
 async def get_sensor_data():
     print(f"[LOG] Fetching sensor data: Temperature={temperature}, Humidity={humidity}")
     return {"temperature": temperature, "humidity": humidity}
+
+# Monitoramento page
+@app.get("/monitoramento", response_class=HTMLResponse)
+async def monitoramento():
+    content = """
+    <h1>Monitoramento de Sensores</h1>
+    <p>Exibição de temperatura, umidade e controle de LED.</p>
+    """
+    return HTMLResponse(content)
+
+# Configurações page
+@app.get("/configuracoes", response_class=HTMLResponse)
+async def configuracoes():
+    content = """
+    <h1>Configurações do Sistema</h1>
+    <p>Gerencie as configurações do sistema anti-mofo e LED.</p>
+    """
+    return HTMLResponse(content)
+
+# Sobre page
+@app.get("/sobre", response_class=HTMLResponse)
+async def sobre():
+    content = """
+    <h1>Sobre o Sistema</h1>
+    <p>Informações sobre o sistema de controle anti-mofo.</p>
+    """
+    return HTMLResponse(content)
 
 # Iniciar o servidor FastAPI
 if __name__ == "__main__":
