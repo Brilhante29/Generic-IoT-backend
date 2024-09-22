@@ -1,0 +1,6 @@
+fastapi
+paho-mqtt
+motor
+aioredis
+matplotlib
+uvicorn
