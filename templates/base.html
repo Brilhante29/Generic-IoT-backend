@@ -66,19 +66,21 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+        .monitoring-container {
+            max-width: 90%; /* Aumentando o container apenas no monitoramento */
+            padding: 60px;
+        }
         .data-row {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
         }
-        
         .data-display {
             font-size: 36px;
             font-weight: 300;
             color: #333;
             margin: 0 20px;
         }
-        
         .data-icon {
             font-size: 50px;
             color: #1E90FF;
@@ -90,13 +92,11 @@
             height: 48px;
             margin-top: 30px;
         }
-        
         .toggle-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-        
         .slider {
             position: absolute;
             cursor: pointer;
@@ -109,7 +109,6 @@
             border-radius: 34px;
             border: 2px solid #ccc;
         }
-        
         .slider:before {
             position: absolute;
             content: "";
@@ -121,14 +120,74 @@
             transition: 0.4s;
             border-radius: 50%;
         }
-        
         input:checked + .slider {
             background-color: #1E90FF;
             border-color: #1E90FF;
         }
-        
         input:checked + .slider:before {
             transform: translateX(52px);
+        }
+        
+        /* Container Configurado para o Card com Gráficos */
+        .monitoring-container {
+            max-width: 75%; /* Aumentando o tamanho do container */
+            margin-left: 200px; /* Movendo o card para a direita, afastando da sidebar */
+            padding: 60px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Uma coluna por padrão */
+            grid-gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Estilo para centralizar e aumentar os gráficos */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Uma coluna por padrão */
+            grid-gap: 20px;
+            width: 100%;
+            max-width: 90vw; /* Aumentando a largura máxima do grid */
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 38vh; /* Aumenta proporcionalmente a altura */
+            width: 100%;
+            margin: 0 auto;  /* Centraliza o container */
+        }
+        
+        @media (min-width: 768px) {
+            .charts-grid {
+                grid-template-columns: repeat(3, 1fr); /* Três gráficos lado a lado em telas maiores */
+            }
+            .chart-container {
+                height: 30vh; /* Ajuste proporcional para telas maiores */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 40vh; /* Aumenta o height em telas menores */
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: repeat(3, 1fr); /* Distribui os gráficos lado a lado em telas grandes */
+            }
+            .chart-container {
+                height: 33vh; /* Controla o tamanho dos gráficos em telas grandes */
+            }
         }
         
     </style>
@@ -144,7 +203,7 @@
     </div>
 
     <!-- Main content -->
-    <div class="container">
+    <div class="container {% block container_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </div>
 </body>

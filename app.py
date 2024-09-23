@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import paho.mqtt.client as mqtt
 import threading
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
@@ -40,7 +40,7 @@ def is_valid_data(temp, hum):
     except ValueError:
         return False
 
-# Function to save valid data to MongoDB and notify WebSocket clients
+# Function to save valid data to MongoDB
 def save_to_mongodb(temp, hum):
     global temperature, humidity
     if is_valid_data(temp, hum):
@@ -94,6 +94,21 @@ async def root():
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request, "temperature": temperature, "humidity": humidity, "led_state": led_state})
 
+# Monitoramento page
+@app.get("/sistema-antimofo/monitoramento", response_class=HTMLResponse)
+async def monitoramento(request: Request):
+    return templates.TemplateResponse("monitoramento.html", {"request": request})
+
+# Configurações page
+@app.get("/sistema-antimofo/configuracoes", response_class=HTMLResponse)
+async def configuracoes(request: Request):
+    return templates.TemplateResponse("configuracoes.html", {"request": request})
+
+# Sobre page
+@app.get("/sistema-antimofo/sobre", response_class=HTMLResponse)
+async def sobre(request: Request):
+    return templates.TemplateResponse("sobre.html", {"request": request})
+
 # API for controlling LED
 @app.get("/api/led/{state}")
 async def control_led(state: str):
@@ -113,6 +128,30 @@ async def control_led(state: str):
 async def get_sensor_data():
     print(f"[LOG] Fetching sensor data: Temperature={temperature}, Humidity={humidity}")
     return {"temperature": temperature, "humidity": humidity}
+
+# API para obter dados de temperatura, umidade e LED com base no período
+@app.get("/api/dados/{period}")
+async def get_sensor_data(period: str):
+    # Define o intervalo de tempo com base no período escolhido
+    now = datetime.utcnow()
+    if period == "1mes":
+        start_date = now - timedelta(days=30)
+    elif period == "2semanas":
+        start_date = now - timedelta(weeks=2)
+    elif period == "1semana":
+        start_date = now - timedelta(weeks=1)
+    elif period == "3dias":
+        start_date = now - timedelta(days=3)
+    else:
+        return JSONResponse(status_code=400, content={"error": "Período inválido"})
+
+    # Filtrar dados no MongoDB com base no intervalo de tempo
+    data_cursor = collection.find({"timestamp": {"$gte": start_date}}).sort("timestamp", 1)
+
+    # Criar uma lista de dicionários com os dados
+    data = [{"temperature": doc["temperature"], "humidity": doc["humidity"], "led_state": doc.get("led_state", "Desligado"), "timestamp": doc["timestamp"]} for doc in data_cursor]
+
+    return {"data": data}
 
 # Start FastAPI server
 if __name__ == "__main__":

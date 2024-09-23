@@ -2,7 +2,154 @@
 
 {% block title %}Monitoramento - Sistema Anti-Mofo{% endblock %}
 
+{% block container_class %}monitoring-container{% endblock %}
+
 {% block content %}
     <h1>Monitoramento de Sensores</h1>
-    <p>Exibição de temperatura, umidade e controle de LED.</p>
+    <p>Monitoramento em tempo real de temperatura, umidade e LED (On/Off).</p>
+
+    <!-- Layout de Gráficos em Colunas -->
+    <div class="charts-grid">
+        <!-- Gráfico de Temperatura -->
+        <div class="chart-container">
+            <canvas id="temperatureChart"></canvas>
+        </div>
+
+        <!-- Gráfico de Umidade -->
+        <div class="chart-container">
+            <canvas id="humidityChart"></canvas>
+        </div>
+
+        <!-- Gráfico de LED (On/Off) -->
+        <div class="chart-container">
+            <canvas id="ledChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Configuração dos gráficos usando Chart.js
+        const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+        const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+        const ledCtx = document.getElementById('ledChart').getContext('2d');
+
+        // Função para formatar o tempo
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString(); // Exibe data e hora
+        }
+
+        // Gráfico de Temperatura
+        const temperatureChart = new Chart(temperatureCtx, {
+            type: 'line',
+            data: {
+                labels: [],  // Timestamps
+                datasets: [{
+                    label: 'Temperatura (°C)',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Tempo' } },
+                    y: { display: true, title: { display: true, text: 'Temperatura (°C)' } }
+                },
+                plugins: {
+                    legend: { display: true, position: 'top' }
+                }
+            }
+        });
+
+        // Gráfico de Umidade
+        const humidityChart = new Chart(humidityCtx, {
+            type: 'line',
+            data: {
+                labels: [],  // Timestamps
+                datasets: [{
+                    label: 'Umidade (%)',
+                    data: [],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Tempo' } },
+                    y: { display: true, title: { display: true, text: 'Umidade (%)' } }
+                },
+                plugins: {
+                    legend: { display: true, position: 'top' }
+                }
+            }
+        });
+
+        // Gráfico de LED On/Off
+        const ledChart = new Chart(ledCtx, {
+            type: 'line',
+            data: {
+                labels: [],  // Timestamps
+                datasets: [{
+                    label: 'LED (On = 1, Off = 0)',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Tempo' } },
+                    y: { 
+                        display: true, 
+                        title: { display: true, text: 'LED (On = 1, Off = 0)' },
+                        ticks: { stepSize: 1, min: 0, max: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: true, position: 'top' }
+                }
+            }
+        });
+
+        // Função para atualizar os dados dos gráficos
+        async function fetchSensorData() {
+            const response = await fetch('/api/dados');
+            const data = await response.json();
+
+            // Formatar os timestamps
+            const timestamps = data.data.map(d => formatTime(d.timestamp));
+
+            // Atualiza os dados do gráfico de temperatura
+            temperatureChart.data.labels = timestamps;
+            temperatureChart.data.datasets[0].data = data.data.map(d => d.temperature);
+            temperatureChart.update();
+
+            // Atualiza os dados do gráfico de umidade
+            humidityChart.data.labels = timestamps;
+            humidityChart.data.datasets[0].data = data.data.map(d => d.humidity);
+            humidityChart.update();
+
+            // Atualiza os dados do gráfico de LED
+            ledChart.data.labels = timestamps;
+            ledChart.data.datasets[0].data = data.data.map(d => d.led_state === 'Ligado' ? 1 : 0);
+            ledChart.update();
+        }
+
+        // Função para buscar dados a cada 2 segundos
+        setInterval(fetchSensorData, 2000);
+    </script>
 {% endblock %}
