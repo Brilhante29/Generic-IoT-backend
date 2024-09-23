@@ -25,4 +25,26 @@
         </label>
         <p id="ledState" style="margin-top: 10px;">LED {{ led_state }}</p>
     </div>
+
+    <script>
+        // Fetch sensor data every 2 seconds
+        async function fetchSensorData() {
+            const response = await fetch('/api/dados');
+            const data = await response.json();
+            document.getElementById('temperatura').innerHTML = data.temperature + "°C";
+            document.getElementById('umidade').innerHTML = data.humidity + "%";
+        }
+
+        setInterval(fetchSensorData, 2000);
+
+        async function toggleLED(checkbox) {
+            if (checkbox.checked) {
+                await fetch('/api/led/on');
+                document.getElementById("ledState").innerHTML = "LED Ligado";
+            } else {
+                await fetch('/api/led/off');
+                document.getElementById("ledState").innerHTML = "LED Desligado";
+            }
+        }
+    </script>
 {% endblock %}

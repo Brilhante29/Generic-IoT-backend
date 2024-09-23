@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import paho.mqtt.client as mqtt
@@ -31,6 +31,7 @@ collection = db.sensor_data
 # MQTT Client Setup
 mqtt_client = mqtt.Client()
 
+# Function to check if the temperature and humidity are valid
 def is_valid_data(temp, hum):
     try:
         temp = float(temp)
@@ -39,23 +40,27 @@ def is_valid_data(temp, hum):
     except ValueError:
         return False
 
+# Function to save valid data to MongoDB and notify WebSocket clients
 def save_to_mongodb(temp, hum):
+    global temperature, humidity
     if is_valid_data(temp, hum):
+        temperature = float(temp)
+        humidity = float(hum)
         data = {
-            "temperature": float(temp),
-            "humidity": float(hum),
+            "temperature": temperature,
+            "humidity": humidity,
             "timestamp": datetime.utcnow()
         }
         collection.insert_one(data)
         print(f"[LOG] Data saved to MongoDB: {data}")
-    else:
-        print(f"[LOG] Invalid data not saved: Temperature={temp}, Humidity={hum}")
 
+# Callback when connected to MQTT
 def on_connect(client, userdata, flags, rc):
     print(f"[LOG] Connected to MQTT Broker with result code {rc}")
     client.subscribe(mqtt_topic_temp)
     client.subscribe(mqtt_topic_hum)
 
+# Callback when receiving messages from MQTT
 def on_message(client, userdata, msg):
     global temperature, humidity
     if msg.topic == mqtt_topic_temp:
@@ -66,9 +71,11 @@ def on_message(client, userdata, msg):
         print(f"[LOG] New Humidity: {humidity}")
         save_to_mongodb(temperature, humidity)
 
+# Configure the MQTT client
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
+# Start the MQTT loop in a background thread
 def start_mqtt():
     mqtt_client.connect(mqtt_broker, mqtt_port, 60)
     mqtt_client.loop_forever()
@@ -87,23 +94,8 @@ async def root():
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request, "temperature": temperature, "humidity": humidity, "led_state": led_state})
 
-# Monitoramento page
-@app.get("/sistema-antimofo/monitoramento", response_class=HTMLResponse)
-async def monitoramento(request: Request):
-    return templates.TemplateResponse("monitoramento.html", {"request": request})
-
-# Configurações page
-@app.get("/sistema-antimofo/configuracoes", response_class=HTMLResponse)
-async def configuracoes(request: Request):
-    return templates.TemplateResponse("configuracoes.html", {"request": request})
-
-# Sobre page
-@app.get("/sistema-antimofo/sobre", response_class=HTMLResponse)
-async def sobre(request: Request):
-    return templates.TemplateResponse("sobre.html", {"request": request})
-
-# API para controle do LED
-@app.get("/led/{state}")
+# API for controlling LED
+@app.get("/api/led/{state}")
 async def control_led(state: str):
     global led_state
     if state == "on":
@@ -116,13 +108,13 @@ async def control_led(state: str):
         print(f"[LOG] Published OFF command to topic {mqtt_topic_cmd}")
     return {"status": f"LED {state}"}
 
-# API para obter os dados de temperatura e umidade
-@app.get("/dados")
+# API to fetch sensor data
+@app.get("/api/dados")
 async def get_sensor_data():
     print(f"[LOG] Fetching sensor data: Temperature={temperature}, Humidity={humidity}")
     return {"temperature": temperature, "humidity": humidity}
 
-# Iniciar o servidor FastAPI
+# Start FastAPI server
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
