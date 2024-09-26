@@ -3,6 +3,73 @@
 {% block title %}Sobre - Sistema Anti-Mofo{% endblock %}
 
 {% block content %}
-    <h1>Sobre o Sistema</h1>
-    <p>Informações sobre o sistema de controle anti-mofo.</p>
+<div class="about-container" style="max-width: 1200px; margin: 40px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+
+    <!-- Título -->
+    <h1 style="font-size: 1.7rem; color: #333; text-align: center; margin-bottom: 10px;">Sobre o Sistema Anti-Mofo</h1>
+
+    <!-- Descrição principal -->
+    <p style="font-size: 1.1rem; line-height: 1.6; color: #555; text-align: center; max-width: 1000px; margin: 0 auto 20px;">
+        O <strong>Sistema Anti-Mofo</strong> foi desenvolvido para oferecer uma solução inteligente e automatizada de controle de umidade e temperatura em ambientes fechados. Nosso objetivo é prevenir o mofo e garantir a preservação de móveis, documentos e itens valiosos, proporcionando um ambiente mais saudável.
+    </p>
+
+    <!-- Barra horizontal -->
+    <hr style="border-top: 1px solid #ccc; margin: 20px 0;">
+
+    <!-- Propósito do Sistema -->
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <div style="flex: 1; padding: 10px;">
+            <h2 style="font-size: 1.3rem; color: #007BFF;">Propósito do Sistema</h2>
+            <p style="font-size: 1rem; line-height: 1.6; color: #555;">
+                Este sistema foi projetado para monitorar as condições ambientais e ajustar automaticamente a umidade e temperatura conforme os parâmetros configuráveis. Ele é ideal para residências, escritórios, bibliotecas, arquivos e outros espaços que necessitam de controle climático eficiente e contínuo.
+            </p>
+        </div>
+    </div>
+
+    <!-- Barra horizontal -->
+    <hr style="border-top: 1px solid #ccc; margin: 20px 0;">
+
+    <!-- Funcionalidades e Agradecimentos -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+
+        <!-- Funcionalidades -->
+        <div style="flex: 1; padding: 10px; text-align: left;">
+            <h2 style="font-size: 1.3rem; color: #007BFF;">Funcionalidades</h2>
+            <ul style="font-size: 1rem; line-height: 1.6; color: #555;">
+                <li>Monitoramento em tempo real de temperatura e umidade.</li>
+                <li>Configuração de limites de temperatura mínima e máxima para controle automático.</li>
+                <li>Ativação automática de dispositivos, como desumidificadores ou ventiladores.</li>
+                <li>Interface amigável e intuitiva para ajustes de configurações.</li>
+                <li>Histórico de dados ambientais para análise futura.</li>
+            </ul>
+        </div>
+
+        <!-- Agradecimentos e Fotos -->
+        <div style="flex: 1; padding: 10px; text-align: center;">
+            <h2 style="font-size: 1.3rem; color: #007BFF;">Agradecimentos</h2>
+            <p style="font-size: 1rem; color: #555; margin-bottom: 10px;">
+                Agradecemos a Yasmim Rodrigues e Guilherme Brilhante por suas contribuições essenciais ao desenvolvimento deste sistema.
+            </p>
+            <div style="display: flex; justify-content: space-evenly; align-items: center;">
+                <div style="text-align: center;">
+                    <img src="/static/figs/yasmim.jpg" alt="Yasmim Rodrigues" style="width: 100px; border-radius: 50%; object-fit: cover;" />
+                    <p style="font-size: 0.9rem; margin-top: 5px;"><strong>Yasmim Rodrigues</strong></p>
+                </div>
+                <div style="text-align: center;">
+                    <img src="/static/figs/guilherme.jpg" alt="Guilherme Brilhante" style="width: 100px; border-radius: 50%; object-fit: cover;" />
+                    <p style="font-size: 0.9rem; margin-top: 5px;"><strong>Guilherme Brilhante</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra horizontal -->
+    <hr style="border-top: 1px solid #ccc; margin: 20px 0;">
+
+    <!-- Mensagem final -->
+    <p style="font-size: 1rem; color: #555; text-align: center; margin-bottom: 0;">
+        <strong>Obrigado por confiar no Sistema Anti-Mofo.</strong> Estamos comprometidos em proporcionar ambientes mais saudáveis e livres de mofo!
+    </p>
+
+</div>
 {% endblock %}
