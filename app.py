@@ -40,6 +40,10 @@ collection = db.sensor_data
 
 # -------------------- Funções Auxiliares --------------------
 
+# Função para log padronizado
+def log_message(level, message):
+    print(f"[{level}] {message}")
+
 # Função para validar dados de temperatura e umidade
 def is_valid_data(temp, hum):
     try:
@@ -58,86 +62,92 @@ def save_to_mongodb(temp, hum):
             "timestamp": datetime.utcnow()
         }
         collection.insert_one(data)
-        print(f"[LOG] Dados salvos no MongoDB: {data}")
+        log_message("LOG", f"Dados salvos no MongoDB: {data}")
 
 # Função para aplicar a lógica de cena com base na temperatura
-def apply_scene_logic(temp):
+def apply_scene_logic(temp=None, hum=None):
     global led_state
 
-    # Adiciona logs para depuração
-    print(f"[LOG] Aplicando lógica de cena. Temperatura atual: {temp}°C, Lógica desativada: {disable_logic}")
+    log_message("LOG", f"Aplicando lógica de cena. Lógica desativada: {disable_logic}")
 
-    # Se a lógica está desativada, desliga o LED e retorna
     if disable_logic:
-        print("[LOG] Lógica de cena desativada. Desligando o LED.")
+        log_message("LOG", "Lógica de cena desativada. Desligando o LED.")
         if led_state == "Ligado":
             mqtt_client.publish(mqtt_topic_cmd, "OFF")
-            set_led_state("Desligado", temp)
-        return  # Retorna se a lógica estiver desativada
-
-    # Converte a temperatura e os limites para float
-    try:
-        temp = float(temp)
-        min_temp = float(min_temperature)
-        max_temp = float(max_temperature)
-    except ValueError as e:
-        print(f"[ERROR] Falha ao converter temperatura: {e}")
-        return  # Se ocorrer erro de conversão, não aplica a lógica
-
-    # Forçar o LED a desligar se a temperatura for maior que o máximo
-    if temp > max_temp:
-        print(f"[LOG] Temperatura ({temp}°C) acima do máximo ({max_temp}°C), forçando o desligamento do LED.")
-        mqtt_client.publish(mqtt_topic_cmd, "OFF")
-        set_led_state("Desligado", temp)
+            set_led_state("Desligado", temp if temp is not None else hum)
         return
 
-    # Determinar se o dispositivo precisa ser ligado ou desligado com base nos limites configurados
-    if temp < min_temp:
-        if led_state == "Desligado":
-            print(f"[LOG] Temperatura ({temp}°C) abaixo do mínimo ({min_temp}°C), ligando o LED.")
-            mqtt_client.publish(mqtt_topic_cmd, "ON")
-            set_led_state("Ligado", temp)
-    else:
-        print(f"[LOG] Temperatura ({temp}°C) dentro da faixa ideal ({min_temp}°C - {max_temp}°C). Nenhuma ação necessária.")
+    try:
+        if temp is not None:
+            temp = float(temp)
+            min_temp = float(min_temperature)
+            max_temp = float(max_temperature)
+
+            # Logica para temperatura permanece como estava
+            if temp > max_temp:
+                log_message("LOG", f"Temperatura ({temp}°C) acima do máximo ({max_temp}°C), desligando o LED.")
+                mqtt_client.publish(mqtt_topic_cmd, "OFF")
+                set_led_state("Desligado", temp)
+            elif temp < min_temp and led_state == "Desligado":
+                log_message("LOG", f"Temperatura ({temp}°C) abaixo do mínimo ({min_temp}°C), ligando o LED.")
+                mqtt_client.publish(mqtt_topic_cmd, "ON")
+                set_led_state("Ligado", temp)
+
+        elif hum is not None:
+            hum = float(hum)
+            min_hum = float(min_humidity)
+            max_hum = float(max_humidity)
+
+            # Lógica para umidade: Ligar o LED se a umidade estiver acima do limite máximo
+            if hum > max_hum and led_state == "Desligado":
+                log_message("LOG", f"Umidade ({hum}%) acima do máximo ({max_hum}%), ligando o LED.")
+                mqtt_client.publish(mqtt_topic_cmd, "ON")
+                set_led_state("Ligado", hum)
+
+            # Desligar o LED se a umidade estiver abaixo do limite mínimo
+            elif hum < min_hum and led_state == "Ligado":
+                log_message("LOG", f"Umidade ({hum}%) abaixo do mínimo ({min_hum}%), desligando o LED.")
+                mqtt_client.publish(mqtt_topic_cmd, "OFF")
+                set_led_state("Desligado", hum)
+
+    except ValueError as e:
+        log_message("ERROR", f"Falha ao converter valores: {e}")
+
 
 # Função para alterar o estado do LED
 def set_led_state(state, temp):
     global led_state
-    led_state = stateset_led_state
-    print(f"[LOG] Dispositivo {state}. Temperatura: {temp}°C")
+    led_state = state
+    log_message("LOG", f"Dispositivo {state}. Temperatura: {temp}°C")
 
 # -------------------- Funções MQTT --------------------
 
-# Callback quando conectar ao MQTT
 def on_connect(client, userdata, flags, rc):
-    print(f"[LOG] Conectado ao Broker MQTT com resultado {rc}")
+    log_message("LOG", f"Conectado ao Broker MQTT com resultado {rc}")
     client.subscribe(mqtt_topic_temp)
     client.subscribe(mqtt_topic_hum)
 
-# Callback para receber mensagens via MQTT
 def on_message(client, userdata, msg):
     global temperature, humidity
     try:
         if msg.topic == mqtt_topic_temp:
-            # Converta a mensagem de temperatura recebida para float
             temperature = float(msg.payload.decode("utf-8"))
-            print(f"[LOG] Nova temperatura recebida: {temperature}°C")
-            apply_scene_logic(temperature)  # Aplica lógica de cena
+            log_message("LOG", f"Nova temperatura recebida: {temperature}°C")
+            apply_scene_logic(temperature)
 
         elif msg.topic == mqtt_topic_hum:
             humidity = float(msg.payload.decode("utf-8"))
-            print(f"[LOG] Nova umidade recebida: {humidity}%")
-            save_to_mongodb(temperature, humidity)  # Salva a temperatura e umidade no banco de dados
+            log_message("LOG", f"Nova umidade recebida: {humidity}%")
+            save_to_mongodb(temperature, humidity)
 
     except ValueError:
-        print(f"[ERROR] Não foi possível converter a mensagem para número: {msg.payload.decode('utf-8')}")
+        log_message("ERROR", f"Não foi possível converter a mensagem: {msg.payload.decode('utf-8')}")
     except Exception as e:
-        print(f"[ERROR] Falha ao processar a mensagem: {e}")
+        log_message("ERROR", f"Falha ao processar a mensagem: {e}")
 
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
-# Função para iniciar o loop do MQTT em uma thread separada
 def start_mqtt():
     mqtt_client.connect(mqtt_broker, mqtt_port, 60)
     mqtt_client.loop_forever()
@@ -148,98 +158,85 @@ mqtt_thread.start()
 
 # -------------------- Rotas de API --------------------
 
-# Rota padrão para redirecionar à página principal
 @app.get("/sistema-antimofo", response_class=HTMLResponse)
 async def root():
     return RedirectResponse(url="/sistema-antimofo/home")
 
-# Página Home
 @app.get("/sistema-antimofo/home", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request, "temperature": temperature, "humidity": humidity, "led_state": led_state})
 
-# Página de Monitoramento
 @app.get("/sistema-antimofo/monitoramento", response_class=HTMLResponse)
 async def monitoramento(request: Request):
     return templates.TemplateResponse("monitoramento.html", {"request": request})
 
-# Página de Configurações
 @app.get("/sistema-antimofo/configuracoes", response_class=HTMLResponse)
 async def configuracoes(request: Request):
     return templates.TemplateResponse("configuracoes.html", {"request": request})
 
-# Página Sobre
 @app.get("/sistema-antimofo/sobre", response_class=HTMLResponse)
 async def sobre(request: Request):
     return templates.TemplateResponse("sobre.html", {"request": request})
 
-# API para alternar a lógica de cena (habilitar/desabilitar)
 @app.post("/api/toggle-logic")
 async def toggle_logic():
     global disable_logic
-    disable_logic = not disable_logic  # Alterna o estado de habilitação/desabilitação
+    disable_logic = not disable_logic
     message = "Lógica de cena desabilitada!" if disable_logic else "Lógica de cena habilitada!"
 
-    # Se a lógica foi desativada, desligue o LED
     if disable_logic and led_state == "Ligado":
         mqtt_client.publish(mqtt_topic_cmd, "OFF")
         set_led_state("Desligado", temperature)
-        print("[LOG] Lógica desativada e LED desligado.")
+        log_message("LOG", "Lógica desativada e LED desligado.")
 
     return {"message": message, "disable_logic": disable_logic}
 
-# API para salvar as configurações de temperatura mínima e máxima
 @app.post("/api/configuracao")
-async def set_temperature_config(request: Request):
-    global min_temperature, max_temperature
+async def set_sensor_config(request: Request):
+    global min_temperature, max_temperature, min_humidity, max_humidity
     body = await request.json()
+
     try:
-        min_temperature = float(body['minTemperature'])
-        max_temperature = float(body['maxTemperature'])
-        print(f"[LOG] Configurações salvas: min_temperature={min_temperature}, max_temperature={max_temperature}")
-        return {"message": "Configurações salvas com sucesso!"}
+        logic_type = body.get('logicType')
+
+        if logic_type == "temperature":
+            min_temperature = float(body['minTemperature'])
+            max_temperature = float(body['maxTemperature'])
+            log_message("LOG", f"Configurações de temperatura salvas: min_temperature={min_temperature}, max_temperature={max_temperature}")
+            return {"message": "Configurações de temperatura salvas com sucesso!"}
+
+        elif logic_type == "humidity":
+            min_humidity = float(body['minHumidity'])
+            max_humidity = float(body['maxHumidity'])
+            log_message("LOG", f"Configurações de umidade salvas: min_humidity={min_humidity}, max_humidity={max_humidity}")
+            return {"message": "Configurações de umidade salvas com sucesso!"}
+
+        else:
+            return JSONResponse(status_code=400, content={"error": "Tipo de lógica inválido."})
+
     except (ValueError, KeyError):
-        print("[ERROR] Valores de configuração inválidos.")
+        log_message("ERROR", "Valores de configuração inválidos.")
         return JSONResponse(status_code=400, content={"error": "Valores de configuração inválidos."})
 
-# API para buscar o estado atual da lógica
 @app.get("/api/get-logic-state")
 async def get_logic_state():
     return {"disable_logic": disable_logic}
 
-# API para salvar as configurações de temperatura mínima e máxima, e desativar lógica
-@app.post("/api/configuracao")
-async def set_temperature_config(request: Request):
-    global min_temperature, max_temperature
-    body = await request.json()
-    try:
-        min_temperature = float(body['minTemperature'])
-        max_temperature = float(body['maxTemperature'])
-        return {"message": "Configurações salvas!"}
-    except (ValueError, KeyError):
-        return JSONResponse(status_code=400, content={"error": "Valores de configuração inválidos."})
-
-# API para controlar o LED
 @app.get("/api/led/{state}")
 async def control_led(state: str):
     global led_state
     if state == "on":
         mqtt_client.publish(mqtt_topic_cmd, "ON")
-        led_state = "Ligado"
-        print(f"[LOG] Published ON command to topic {mqtt_topic_cmd}")
+        set_led_state("Ligado", temperature)
     elif state == "off":
         mqtt_client.publish(mqtt_topic_cmd, "OFF")
-        led_state = "Desligado"
-        print(f"[LOG] Published OFF command to topic {mqtt_topic_cmd}")
+        set_led_state("Desligado", temperature)
     return {"status": f"LED {state}"}
 
-# API para buscar os dados do sensor
 @app.get("/api/dados")
 async def get_sensor_data():
-    print(f"[LOG] Fetching sensor data: Temperature={temperature}, Humidity={humidity}")
     return {"temperature": temperature, "humidity": humidity}
 
-# API para buscar dados de temperatura, umidade e LED com base no período
 @app.get("/api/dados/{period}")
 async def get_sensor_data(period: str):
     periods = {
@@ -257,15 +254,6 @@ async def get_sensor_data(period: str):
     data = [{"temperature": doc["temperature"], "humidity": doc["humidity"], "led_state": doc.get("led_state", "Desligado"), "timestamp": doc["timestamp"]} for doc in data_cursor]
 
     return {"data": data}
-
-# API para alternar a lógica de cena (habilitar/desabilitar)
-@app.post("/api/toggle-logic")
-async def toggle_logic():
-    global disable_logic
-    disable_logic = not disable_logic  # Alterna o estado de habilitação/desabilitação
-    message = "Lógica de cena desabilitada!" if disable_logic else "Lógica de cena habilitada!"
-    print(f"[LOG] {message}")
-    return {"message": message, "disable_logic": disable_logic}
 
 # -------------------- Inicialização do Servidor --------------------
 if __name__ == "__main__":

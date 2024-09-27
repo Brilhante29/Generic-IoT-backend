@@ -7,25 +7,57 @@
 <p>Gerencie as configurações do sistema anti-mofo e controle de LED.</p>
 
 <div class="scene-configuration">
-  <h2>Configurar Temperatura para Cenas</h2>
-  <form id="sceneForm">
-    <label for="minTemperature">Temperatura Mínima (°C):</label>
-    <input
-      type="number"
-      id="minTemperature"
-      name="minTemperature"
-      value="22"
-      required
-    />
+  <h2>Configurar Cenas para o Sistema</h2>
 
-    <label for="maxTemperature">Temperatura Máxima (°C):</label>
-    <input
-      type="number"
-      id="maxTemperature"
-      name="maxTemperature"
-      value="27"
-      required
-    />
+  <!-- Seletor de lógica: Temperatura ou Umidade -->
+  <label for="logicType">Configurar com base em:</label>
+  <select id="logicType" name="logicType">
+    <option value="temperature">Temperatura</option>
+    <option value="humidity">Umidade</option>
+  </select>
+
+  <form id="sceneForm">
+    <!-- Configurações de Temperatura -->
+    <div id="temperatureSettings">
+      <label for="minTemperature">Temperatura Mínima (°C):</label>
+      <input
+        type="number"
+        id="minTemperature"
+        name="minTemperature"
+        value="22"
+        required
+      />
+
+      <label for="maxTemperature">Temperatura Máxima (°C):</label>
+      <input
+        type="number"
+        id="maxTemperature"
+        name="maxTemperature"
+        value="27"
+        required
+      />
+    </div>
+
+    <!-- Configurações de Umidade -->
+    <div id="humiditySettings" style="display: none;">
+      <label for="minHumidity">Umidade Mínima (%):</label>
+      <input
+        type="number"
+        id="minHumidity"
+        name="minHumidity"
+        value="30"
+        required
+      />
+
+      <label for="maxHumidity">Umidade Máxima (%):</label>
+      <input
+        type="number"
+        id="maxHumidity"
+        name="maxHumidity"
+        value="60"
+        required
+      />
+    </div>
 
     <button type="submit">Salvar Configurações</button>
   </form>
@@ -38,28 +70,51 @@
 </div>
 
 <script>
+  // Alterar a exibição dos campos com base na escolha de "logicType"
+  document.getElementById("logicType").addEventListener("change", function () {
+    const logicType = this.value;
+    const temperatureSettings = document.getElementById("temperatureSettings");
+    const humiditySettings = document.getElementById("humiditySettings");
+
+    if (logicType === "temperature") {
+      temperatureSettings.style.display = "block";
+      humiditySettings.style.display = "none";
+    } else if (logicType === "humidity") {
+      temperatureSettings.style.display = "none";
+      humiditySettings.style.display = "block";
+    }
+  });
+
   // Função para exibir/ocultar o indicador de carregamento
   function toggleLoading(show) {
     const loadingIndicator = document.getElementById("loadingIndicator");
     loadingIndicator.style.display = show ? "inline" : "none";
   }
 
-  // Função para enviar configurações de temperatura mínima e máxima para o backend
+  // Função para enviar configurações para o backend
   document.getElementById("sceneForm").addEventListener("submit", async function (event) {
     event.preventDefault();
 
-    const minTemp = document.getElementById("minTemperature").value;
-    const maxTemp = document.getElementById("maxTemperature").value;
+    const logicType = document.getElementById("logicType").value;
+    let payload = {};
+
+    if (logicType === "temperature") {
+      const minTemp = document.getElementById("minTemperature").value;
+      const maxTemp = document.getElementById("maxTemperature").value;
+      payload = { logicType: "temperature", minTemperature: minTemp, maxTemperature: maxTemp };
+    } else if (logicType === "humidity") {
+      const minHumidity = document.getElementById("minHumidity").value;
+      const maxHumidity = document.getElementById("maxHumidity").value;
+      payload = { logicType: "humidity", minHumidity: minHumidity, maxHumidity: maxHumidity };
+    }
 
     try {
       toggleLoading(true);
-
       const response = await fetch("/api/configuracao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ minTemperature: minTemp, maxTemperature: maxTemp }),
+        body: JSON.stringify(payload),
       });
-
       const result = await response.json();
       alert(result.message);
     } catch (error) {
@@ -69,54 +124,5 @@
     }
   });
 
-  // Função para alternar o estado da lógica (habilitar/desabilitar)
-  async function toggleLogic() {
-    const button = document.getElementById("toggleLogicButton");
-
-    try {
-      toggleLoading(true);
-
-      // Desabilita temporariamente o botão para evitar múltiplos cliques
-      button.disabled = true;
-
-      const response = await fetch("/api/toggle-logic", {
-        method: "POST",
-      });
-
-      const result = await response.json();
-
-      // Atualiza o texto do botão com base no novo estado
-      button.textContent = result.disable_logic ? "Habilitar Lógica" : "Desabilitar Lógica";
-      alert(result.message);
-    } catch (error) {
-      alert("Erro ao alternar a lógica de cena!");
-    } finally {
-      button.disabled = false; // Habilita o botão novamente
-      toggleLoading(false);
-    }
-  }
-
-  // Adicionar evento de clique no botão de alternância
-  document.getElementById("toggleLogicButton").addEventListener("click", toggleLogic);
-
-  // Função para atualizar o estado do botão ao carregar a página
-  async function updateButtonState() {
-    try {
-      toggleLoading(true);
-
-      const response = await fetch("/api/get-logic-state");
-      const result = await response.json();
-
-      const button = document.getElementById("toggleLogicButton");
-      button.textContent = result.disable_logic ? "Habilitar Lógica" : "Desabilitar Lógica";
-    } catch (error) {
-      alert("Erro ao obter o estado atual da lógica!");
-    } finally {
-      toggleLoading(false);
-    }
-  }
-
-  // Atualizar o botão inicialmente com base no estado atual
-  window.addEventListener("load", updateButtonState);
 </script>
 {% endblock %}
