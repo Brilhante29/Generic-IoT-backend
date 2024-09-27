@@ -1,236 +1,260 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Monitoramento - Sistema Anti-Mofo{%
+endblock %} {% block container_class %}monitoring-container{% endblock %} {%
+block content %}
+<h1>Monitoramento de Sensores</h1>
+<p>Monitoramento em tempo real de temperatura, umidade e LED (On/Off).</p>
 
-{% block title %}Monitoramento - Sistema Anti-Mofo{% endblock %}
-{% block container_class %}monitoring-container{% endblock %}
+<!-- Seletor de Período -->
+<div>
+  <label for="period">Escolha o Período:</label>
+  <select id="period">
+    <option value="tempo_real" selected>Tempo Real</option>
+    <!-- Nova opção para tempo real, default -->
+    <option value="1mes">Último Mês</option>
+    <option value="2semanas">Últimas 2 Semanas</option>
+    <option value="1semana">Última Semana</option>
+    <option value="3dias">Últimos 3 Dias</option>
+  </select>
+</div>
 
-{% block content %}
-    <h1>Monitoramento de Sensores</h1>
-    <p>Monitoramento em tempo real de temperatura, umidade e LED (On/Off).</p>
+<!-- Layout de Gráficos em Colunas -->
+<div class="charts-grid">
+  <!-- Gráfico de Temperatura -->
+  <div class="chart-container">
+    <canvas id="temperatureChart"></canvas>
+  </div>
 
-    <!-- Seletor de Período -->
-    <div>
-        <label for="period">Escolha o Período:</label>
-        <select id="period">
-            <option value="tempo_real" selected>Tempo Real</option> <!-- Nova opção para tempo real, default -->
-            <option value="1mes">Último Mês</option>
-            <option value="2semanas">Últimas 2 Semanas</option>
-            <option value="1semana">Última Semana</option>
-            <option value="3dias">Últimos 3 Dias</option>
-        </select>
-    </div>
+  <!-- Gráfico de Umidade -->
+  <div class="chart-container">
+    <canvas id="humidityChart"></canvas>
+  </div>
 
-    <!-- Layout de Gráficos em Colunas -->
-    <div class="charts-grid">
-        <!-- Gráfico de Temperatura -->
-        <div class="chart-container">
-            <canvas id="temperatureChart"></canvas>
-        </div>
+  <!-- Gráfico de LED (On/Off) -->
+  <div class="chart-container">
+    <canvas id="ledChart"></canvas>
+  </div>
+</div>
 
-        <!-- Gráfico de Umidade -->
-        <div class="chart-container">
-            <canvas id="humidityChart"></canvas>
-        </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <!-- Gráfico de LED (On/Off) -->
-        <div class="chart-container">
-            <canvas id="ledChart"></canvas>
-        </div>
-    </div>
+<script>
+  const maxDataPoints = 50; // Número máximo de pontos no gráfico de tempo real
+  let previousPeriod = "tempo_real"; // Armazena o período anterior para detectar mudanças
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  // Configuração dos gráficos usando Chart.js
+  const temperatureCtx = document
+    .getElementById("temperatureChart")
+    .getContext("2d");
+  const humidityCtx = document.getElementById("humidityChart").getContext("2d");
+  const ledCtx = document.getElementById("ledChart").getContext("2d");
 
-    <script>
-        const maxDataPoints = 50;  // Número máximo de pontos no gráfico de tempo real
-        let previousPeriod = 'tempo_real';  // Armazena o período anterior para detectar mudanças
+  // Função para formatar o tempo
+  function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString(); // Exibe data e hora
+  }
 
-        // Configuração dos gráficos usando Chart.js
-        const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
-        const humidityCtx = document.getElementById('humidityChart').getContext('2d');
-        const ledCtx = document.getElementById('ledChart').getContext('2d');
+  // Gráfico de Temperatura
+  const temperatureChart = new Chart(temperatureCtx, {
+    type: "line",
+    data: {
+      labels: [], // Timestamps
+      datasets: [
+        {
+          label: "Temperatura (°C)",
+          data: [],
+          borderColor: "rgba(255, 99, 132, 1)",
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 3, // Tamanho dos pontos no modo "Tempo Real"
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: true, title: { display: true, text: "Tempo" } },
+        y: {
+          display: true,
+          title: { display: true, text: "Temperatura (°C)" },
+        },
+      },
+      plugins: {
+        legend: { display: true, position: "top" },
+      },
+    },
+  });
 
-        // Função para formatar o tempo
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString(); // Exibe data e hora
-        }
+  // Gráfico de Umidade
+  const humidityChart = new Chart(humidityCtx, {
+    type: "line",
+    data: {
+      labels: [], // Timestamps
+      datasets: [
+        {
+          label: "Umidade (%)",
+          data: [],
+          borderColor: "rgba(54, 162, 235, 1)",
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 3, // Tamanho dos pontos no modo "Tempo Real"
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: true, title: { display: true, text: "Tempo" } },
+        y: { display: true, title: { display: true, text: "Umidade (%)" } },
+      },
+      plugins: {
+        legend: { display: true, position: "top" },
+      },
+    },
+  });
 
-        // Gráfico de Temperatura
-        const temperatureChart = new Chart(temperatureCtx, {
-            type: 'line',
-            data: {
-                labels: [],  // Timestamps
-                datasets: [{
-                    label: 'Temperatura (°C)',
-                    data: [],
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    fill: true,
-                    borderWidth: 2,
-                    pointRadius: 3  // Tamanho dos pontos no modo "Tempo Real"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Tempo' } },
-                    y: { display: true, title: { display: true, text: 'Temperatura (°C)' } }
-                },
-                plugins: {
-                    legend: { display: true, position: 'top' }
-                }
-            }
-        });
+  // Gráfico de LED On/Off
+  // Ajuste do gráfico de LED para exibir melhor as mudanças entre 0 e 1
+  const ledChart = new Chart(ledCtx, {
+    type: "line",
+    data: {
+      labels: [], // Timestamps
+      datasets: [
+        {
+          label: "LED (On = 1, Off = 0)",
+          data: [],
+          borderColor: function (context) {
+            const value = context.dataset.data[context.dataIndex];
+            return value === 1
+              ? "rgba(75, 192, 192, 1)"
+              : "rgba(255, 99, 132, 1)"; // Cores diferentes para On e Off
+          },
+          backgroundColor: function (context) {
+            const value = context.dataset.data[context.dataIndex];
+            return value === 1
+              ? "rgba(75, 192, 192, 0.2)"
+              : "rgba(255, 99, 132, 0.2)";
+          },
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 5, // Tamanho dos pontos para facilitar visualização
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: true, title: { display: true, text: "Tempo" } },
+        y: {
+          display: true,
+          title: { display: true, text: "LED (On = 1, Off = 0)" },
+          ticks: { stepSize: 1, min: 0, max: 1 },
+        },
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "top",
+          labels: {
+            boxWidth: 10,
+            padding: 10,
+          },
+        },
+      },
+    },
+  });
 
-        // Gráfico de Umidade
-        const humidityChart = new Chart(humidityCtx, {
-            type: 'line',
-            data: {
-                labels: [],  // Timestamps
-                datasets: [{
-                    label: 'Umidade (%)',
-                    data: [],
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    fill: true,
-                    borderWidth: 2,
-                    pointRadius: 3  // Tamanho dos pontos no modo "Tempo Real"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Tempo' } },
-                    y: { display: true, title: { display: true, text: 'Umidade (%)' } }
-                },
-                plugins: {
-                    legend: { display: true, position: 'top' }
-                }
-            }
-        });
+  // Função para ajustar o gráfico com ou sem pontos, dependendo do período selecionado
+  function adjustChartOptions(period) {
+    const showPoints = period === "tempo_real";
+    temperatureChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
+    humidityChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
+    ledChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
+    temperatureChart.update();
+    humidityChart.update();
+    ledChart.update();
+  }
 
-        // Gráfico de LED On/Off
-        const ledChart = new Chart(ledCtx, {
-            type: 'line',
-            data: {
-                labels: [],  // Timestamps
-                datasets: [{
-                    label: 'LED (On = 1, Off = 0)',
-                    data: [],
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true,
-                    borderWidth: 2,
-                    pointRadius: 3  // Tamanho dos pontos no modo "Tempo Real"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Permite que o gráfico ajuste-se ao contêiner
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Tempo' } },
-                    y: { 
-                        display: true, 
-                        title: { display: true, text: 'LED (On = 1, Off = 0)' },
-                        ticks: { stepSize: 1, min: 0, max: 1 }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            boxWidth: 10, // Reduz a largura da caixa de legenda para não sobrepor o gráfico
-                            padding: 10   // Adiciona um pouco de espaço entre a legenda e o gráfico
-                        }
-                    }
-                }
-            }
-        });
+  // Função para adicionar novos pontos ao gráfico, mantendo o limite de pontos
+  function addDataToChart(chart, label, data) {
+    chart.data.labels.push(label);
+    chart.data.datasets[0].data.push(data);
 
-        // Função para ajustar o gráfico com ou sem pontos, dependendo do período selecionado
-        function adjustChartOptions(period) {
-            const showPoints = period === 'tempo_real';
-            temperatureChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
-            humidityChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
-            ledChart.data.datasets[0].pointRadius = showPoints ? 3 : 0;
-            temperatureChart.update();
-            humidityChart.update();
-            ledChart.update();
-        }
+    // Limitar o número de pontos no gráfico
+    if (chart.data.labels.length > maxDataPoints) {
+      chart.data.labels.shift(); // Remove o primeiro elemento
+      chart.data.datasets[0].data.shift(); // Remove o primeiro elemento
+    }
 
-        // Função para adicionar novos pontos ao gráfico, mantendo o limite de pontos
-        function addDataToChart(chart, label, data) {
-            chart.data.labels.push(label);
-            chart.data.datasets[0].data.push(data);
+    chart.update();
+  }
 
-            // Limitar o número de pontos no gráfico
-            if (chart.data.labels.length > maxDataPoints) {
-                chart.data.labels.shift(); // Remove o primeiro elemento
-                chart.data.datasets[0].data.shift(); // Remove o primeiro elemento
-            }
+  // Função para limpar os dados dos gráficos
+  function resetCharts() {
+    temperatureChart.data.labels = [];
+    temperatureChart.data.datasets[0].data = [];
+    humidityChart.data.labels = [];
+    humidityChart.data.datasets[0].data = [];
+    ledChart.data.labels = [];
+    ledChart.data.datasets[0].data = [];
+    temperatureChart.update();
+    humidityChart.update();
+    ledChart.update();
+  }
 
-            chart.update();
-        }
+  // Função para atualizar os dados dos gráficos
+  async function fetchSensorData() {
+    const period = document.getElementById("period").value; // Obtenha o período selecionado
+    adjustChartOptions(period); // Ajustar os pontos no gráfico com base no período selecionado
 
-        // Função para limpar os dados dos gráficos
-        function resetCharts() {
-            temperatureChart.data.labels = [];
-            temperatureChart.data.datasets[0].data = [];
-            humidityChart.data.labels = [];
-            humidityChart.data.datasets[0].data = [];
-            ledChart.data.labels = [];
-            ledChart.data.datasets[0].data = [];
-            temperatureChart.update();
-            humidityChart.update();
-            ledChart.update();
-        }
+    // Se o período mudou para "tempo_real", reiniciar os gráficos
+    if (period === "tempo_real" && previousPeriod !== "tempo_real") {
+      resetCharts();
+    }
+    previousPeriod = period;
 
-        // Função para atualizar os dados dos gráficos
-        async function fetchSensorData() {
-            const period = document.getElementById("period").value;  // Obtenha o período selecionado
-            adjustChartOptions(period);  // Ajustar os pontos no gráfico com base no período selecionado
+    const url = period === "tempo_real" ? "/api/dados" : `/api/dados/${period}`;
+    const response = await fetch(url);
+    const data = await response.json();
 
-            // Se o período mudou para "tempo_real", reiniciar os gráficos
-            if (period === "tempo_real" && previousPeriod !== "tempo_real") {
-                resetCharts();
-            }
-            previousPeriod = period;
+    const timestamp = formatTime(new Date());
 
-            const url = period === "tempo_real" ? '/api/dados' : `/api/dados/${period}`;
-            const response = await fetch(url);
-            const data = await response.json();
+    // Adiciona os novos dados no modo "Tempo Real"
+    if (period === "tempo_real") {
+      addDataToChart(temperatureChart, timestamp, data.temperature);
+      addDataToChart(humidityChart, timestamp, data.humidity);
+      addDataToChart(ledChart, timestamp, data.led_state === "Ligado" ? 1 : 0);
+    } else {
+      // Preenche os gráficos com os dados do período selecionado
+      const timestamps = data.data.map((d) => formatTime(d.timestamp));
 
-            const timestamp = formatTime(new Date());
+      temperatureChart.data.labels = timestamps;
+      temperatureChart.data.datasets[0].data = data.data.map(
+        (d) => d.temperature
+      );
+      temperatureChart.update();
 
-            // Adiciona os novos dados no modo "Tempo Real"
-            if (period === "tempo_real") {
-                addDataToChart(temperatureChart, timestamp, data.temperature);
-                addDataToChart(humidityChart, timestamp, data.humidity);
-                addDataToChart(ledChart, timestamp, data.led_state === 'Ligado' ? 1 : 0);
-            } else {
-                // Preenche os gráficos com os dados do período selecionado
-                const timestamps = data.data.map(d => formatTime(d.timestamp));
+      humidityChart.data.labels = timestamps;
+      humidityChart.data.datasets[0].data = data.data.map((d) => d.humidity);
+      humidityChart.update();
 
-                temperatureChart.data.labels = timestamps;
-                temperatureChart.data.datasets[0].data = data.data.map(d => d.temperature);
-                temperatureChart.update();
+      ledChart.data.labels = timestamps;
+      ledChart.data.datasets[0].data = data.data.map((d) =>
+        d.led_state === "Ligado" ? 1 : 0
+      );
+      ledChart.update();
+    }
+  }
 
-                humidityChart.data.labels = timestamps;
-                humidityChart.data.datasets[0].data = data.data.map(d => d.humidity);
-                humidityChart.update();
+  // Atualizar os gráficos quando o período muda
+  document.getElementById("period").addEventListener("change", fetchSensorData);
 
-                ledChart.data.labels = timestamps;
-                ledChart.data.datasets[0].data = data.data.map(d => d.led_state === 'Ligado' ? 1 : 0);
-                ledChart.update();
-            }
-        }
-
-        // Atualizar os gráficos quando o período muda
-        document.getElementById("period").addEventListener("change", fetchSensorData);
-        
-        // Buscar dados a cada 2 segundos
-        setInterval(fetchSensorData, 2000);
-    </script>
+  // Buscar dados a cada 2 segundos
+  setInterval(fetchSensorData, 2000);
+</script>
 {% endblock %}

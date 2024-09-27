@@ -14,49 +14,69 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #f0f0f0;
+        background-color: #fafafa; /* Cinza extremamente claro */
       }
+
       .sidebar {
         height: 100%;
         width: 80px;
         position: fixed;
         top: 0;
         left: 0;
-        background-color: #333;
+        background-color: #1b2a49; /* Azul escuro marcante */
         display: flex;
         flex-direction: column;
         align-items: center;
         padding-top: 20px;
-        transition: width 0.4s;
+        transition: width 0.4s ease-in-out, border-radius 0.4s ease-in-out;
         overflow: hidden;
+        border-radius: 0 30px 30px 0; /* Arredondamento nos cantos direito superior e inferior */
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2); /* Sombra sutil para dar profundidade */
       }
+      
       .sidebar:hover {
-        width: 200px;
+        width: 220px; /* Aumenta a largura ao passar o mouse */
+        border-radius: 0 50px 50px 0; /* Aumenta o arredondamento ao expandir */
       }
+      
       .sidebar i {
         font-size: 36px;
         color: white;
         margin: 20px 0;
+        transition: transform 0.3s ease-in-out;
       }
+      
+      .sidebar i:hover {
+        transform: scale(1.2); /* Efeito de hover nos ícones */
+      }
+      
       .sidebar span {
         display: none;
         font-size: 18px;
         color: white;
         white-space: nowrap;
         padding-left: 10px;
+        transition: opacity 0.4s ease-in-out;
       }
+      
       .sidebar:hover span {
         display: inline-block;
+        opacity: 1; /* Suaviza a transição do texto ao aparecer */
       }
+      
       .sidebar a {
         display: flex;
         align-items: center;
         width: 100%;
         padding-left: 10px;
+        transition: background-color 0.3s ease-in-out;
       }
+      
       .sidebar a:hover {
-        background-color: #444;
+        background-color: #24385b; /* Azul intermediário mais claro ao passar o mouse */
       }
+    
+
       .container {
         text-align: center;
         width: 100%;
@@ -66,25 +86,30 @@
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
+
       .monitoring-container {
         max-width: 90%;
         padding: 60px;
       }
+
       .data-row {
         display: flex;
         justify-content: space-around;
         margin-bottom: 20px;
       }
+
       .data-display {
         font-size: 36px;
         font-weight: 300;
         color: #333;
         margin: 0 20px;
       }
+
       .data-icon {
         font-size: 50px;
         color: #1e90ff;
       }
+
       .toggle-switch {
         position: relative;
         display: inline-block;
@@ -92,11 +117,13 @@
         height: 48px;
         margin-top: 30px;
       }
+
       .toggle-switch input {
         opacity: 0;
         width: 0;
         height: 0;
       }
+
       .slider {
         position: absolute;
         cursor: pointer;
@@ -109,6 +136,7 @@
         border-radius: 34px;
         border: 2px solid #ccc;
       }
+
       .slider:before {
         position: absolute;
         content: "";
@@ -120,13 +148,16 @@
         transition: 0.4s;
         border-radius: 50%;
       }
+
       input:checked + .slider {
         background-color: #1e90ff;
         border-color: #1e90ff;
       }
+
       input:checked + .slider:before {
         transform: translateX(52px);
       }
+
       .monitoring-container {
         max-width: 75%;
         margin-left: 240px;
@@ -135,6 +166,7 @@
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
+
       .charts-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -144,29 +176,86 @@
         margin: 0 auto;
         padding: 20px;
       }
+
       .chart-container {
         position: relative;
         height: 38vh;
         width: 100%;
         margin: 0 auto;
       }
+
       @media (min-width: 768px) {
         .charts-grid {
           grid-template-columns: repeat(3, 1fr);
         }
+
         .chart-container {
           height: 30vh;
         }
       }
+
       @media (max-width: 768px) {
         .chart-container {
           height: 40vh;
         }
       }
+
       .chart-container canvas {
         max-width: 100%;
         height: auto;
       }
+
+      .styled-select {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .settings-container label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .form-input {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        width: 100%;
+      }
+
+      .styled-button {
+        background-color: #1e90ff;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+
+      .styled-button:hover {
+        background-color: #1c86ee;
+      }
+
+      .styled-button.danger {
+        background-color: #ff4c4c;
+      }
+
+      .styled-button.danger:hover {
+        background-color: #ff1f1f;
+      }
+
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   </head>

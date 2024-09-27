@@ -11,14 +11,14 @@
 
   <!-- Seletor de lógica: Temperatura ou Umidade -->
   <label for="logicType">Configurar com base em:</label>
-  <select id="logicType" name="logicType">
+  <select id="logicType" name="logicType" class="styled-select">
     <option value="temperature">Temperatura</option>
     <option value="humidity">Umidade</option>
   </select>
 
-  <form id="sceneForm">
+  <form id="sceneForm" class="form-container">
     <!-- Configurações de Temperatura -->
-    <div id="temperatureSettings">
+    <div id="temperatureSettings" class="settings-container">
       <label for="minTemperature">Temperatura Mínima (°C):</label>
       <input
         type="number"
@@ -26,6 +26,7 @@
         name="minTemperature"
         value="22"
         required
+        class="form-input"
       />
 
       <label for="maxTemperature">Temperatura Máxima (°C):</label>
@@ -35,11 +36,12 @@
         name="maxTemperature"
         value="27"
         required
+        class="form-input"
       />
     </div>
 
     <!-- Configurações de Umidade -->
-    <div id="humiditySettings" style="display: none;">
+    <div id="humiditySettings" class="settings-container" style="display: none;">
       <label for="minHumidity">Umidade Mínima (%):</label>
       <input
         type="number"
@@ -47,6 +49,7 @@
         name="minHumidity"
         value="30"
         required
+        class="form-input"
       />
 
       <label for="maxHumidity">Umidade Máxima (%):</label>
@@ -56,15 +59,16 @@
         name="maxHumidity"
         value="60"
         required
+        class="form-input"
       />
     </div>
 
-    <button type="submit">Salvar Configurações</button>
+    <button type="submit" class="styled-button">Salvar Configurações</button>
   </form>
 
-  <!-- Botão para desabilitar ou habilitar a lógica -->
+  <!-- Botão para desabilitar todas as lógicas e desligar o LED -->
   <div style="margin-top: 20px;">
-    <button id="toggleLogicButton">Desabilitar Lógica</button>
+    <button id="disableLogicButton" class="styled-button danger">Desabilitar Todas as Lógicas e Desligar LED</button>
     <span id="loadingIndicator" style="display:none;">Carregando...</span>
   </div>
 </div>
@@ -119,6 +123,20 @@
       alert(result.message);
     } catch (error) {
       alert("Erro ao salvar configurações!");
+    } finally {
+      toggleLoading(false);
+    }
+  });
+
+  // Função para desabilitar todas as lógicas e desligar o LED
+  document.getElementById("disableLogicButton").addEventListener("click", async function () {
+    try {
+      toggleLoading(true);
+      const response = await fetch("/api/toggle-logic", { method: "POST" });
+      const result = await response.json();
+      alert(result.message);
+    } catch (error) {
+      alert("Erro ao desabilitar lógicas!");
     } finally {
       toggleLoading(false);
     }
