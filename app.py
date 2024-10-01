@@ -224,17 +224,21 @@ async def get_sensor_data_period(period: str):
         "1mes": timedelta(days=30),
         "2semanas": timedelta(weeks=2),
         "1semana": timedelta(weeks=1),
-        "3dias": timedelta(days=3)
+        "3dias": timedelta(days=3),
+        "24h": timedelta(hours=24),
+        "6h": timedelta(hours=6),
+        "1h": timedelta(hours=1)
     }
 
     if period not in periods:
         return JSONResponse(status_code=400, content={"error": "Período inválido"})
 
-    start_date = datetime.utcnow() - periods[period]
+    start_date = datetime.now() - periods[period]
     data_cursor = collection.find({"timestamp": {"$gte": start_date}}).sort("timestamp", 1)
     data = [{"temperature": doc["temperature"], "humidity": doc["humidity"], "led_state": doc.get("led_state", "Desligado"), "timestamp": doc["timestamp"]} for doc in data_cursor]
 
     return {"data": data}
+
 
 # -------------------- Inicialização do Servidor --------------------
 if __name__ == "__main__":
