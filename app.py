@@ -21,6 +21,7 @@ mqtt_port = 1883
 mqtt_topic_temp = "/ThinkIOT/temp"
 mqtt_topic_hum = "/ThinkIOT/hum"
 mqtt_topic_cmd = "/ThinkIOT/Subscribe"
+mqtt_topic_state = "/ThinkIOT/Publish"  # Tópico para receber informações do estado do sistema do ESP32
 
 # Configuração do cliente MQTT
 mqtt_client = mqtt.Client()
@@ -102,6 +103,7 @@ def on_connect(client, userdata, flags, rc):
     log_message("LOG", f"Conectado ao Broker MQTT com resultado {rc}")
     client.subscribe(mqtt_topic_temp)
     client.subscribe(mqtt_topic_hum)
+    client.subscribe(mqtt_topic_state)  # Subscreve ao tópico de estado enviado pelo ESP32
 
 # Função para receber mensagens via MQTT
 def on_message(client, userdata, msg):
@@ -117,6 +119,17 @@ def on_message(client, userdata, msg):
             log_message("LOG", f"Nova umidade recebida: {humidity}%")
             apply_scene_logic(hum=humidity)
             save_to_mongodb(temperature, humidity)
+
+        elif msg.topic == mqtt_topic_state:  # Recebe estado do ESP32
+            state = msg.payload.decode("utf-8")
+            log_message("LOG", f"Estado recebido do ESP32: {state}")
+            if "Ativado" in state:
+                if logic_enabled is None:
+                    logic_enabled = "temperature"  # Usa temperatura como padrão
+                set_led_state("Ligado")
+            elif "Desativado" in state:
+                logic_enabled = None
+                set_led_state("Desligado")
 
     except ValueError:
         log_message("ERROR", f"Erro ao converter a mensagem: {msg.payload.decode('utf-8')}")
@@ -140,7 +153,7 @@ async def root():
 
 @app.get("/sistema-antimofo/home", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request, "temperature": temperature, "humidity": humidity, "led_state": led_state})
+    return templates.TemplateResponse("home.html", {"request": request, "temperature": temperature, "humidity": humidity, "led_state": led_state, "manual_control": manual_led_control})
 
 @app.get("/sistema-antimofo/monitoramento", response_class=HTMLResponse)
 async def monitoramento(request: Request):
@@ -169,6 +182,7 @@ async def set_sensor_config(request: Request):
             max_temperature = float(body['maxTemperature'])
             logic_enabled = "temperature"
             log_message("LOG", f"Lógica de temperatura habilitada: min={min_temperature}°C, max={max_temperature}°C")
+            mqtt_client.publish(mqtt_topic_cmd, "activate_logic")  # Envia ativação via MQTT
             return {"message": "Configurações de temperatura salvas e lógica habilitada!"}
 
         elif logic_type == "humidity":
@@ -176,6 +190,7 @@ async def set_sensor_config(request: Request):
             max_humidity = float(body['maxHumidity'])
             logic_enabled = "humidity"
             log_message("LOG", f"Lógica de umidade habilitada: min={min_humidity}%, max={max_humidity}%")
+            mqtt_client.publish(mqtt_topic_cmd, "activate_logic")  # Envia ativação via MQTT
             return {"message": "Configurações de umidade salvas e lógica habilitada!"}
 
         else:
@@ -191,7 +206,7 @@ async def toggle_logic():
     global logic_enabled, manual_led_control
     logic_enabled = None  # Desabilita qualquer lógica ativa
     manual_led_control = True  # Permite controle manual do LED
-    mqtt_client.publish(mqtt_topic_cmd, "OFF")  # Desliga o LED ao desabilitar lógica
+    mqtt_client.publish(mqtt_topic_cmd, "OFF")  # Envia desativação via MQTT
     set_led_state("Desligado")
     log_message("LOG", "Lógica desativada, controle manual do LED habilitado.")
     return {"message": "Lógica desativada e controle manual do LED habilitado!"}
@@ -215,7 +230,7 @@ async def control_led(state: str):
 # API para buscar o estado atual de temperatura, umidade e LED
 @app.get("/api/dados")
 async def get_sensor_data():
-    return {"temperature": temperature, "humidity": humidity, "led_state": led_state}
+    return {"temperature": temperature, "humidity": humidity, "led_state": led_state, "manual_control": manual_led_control}
 
 # API para buscar dados históricos com base no período
 @app.get("/api/dados/{period}")
@@ -227,7 +242,7 @@ async def get_sensor_data_period(period: str):
         "3dias": timedelta(days=3),
         "24h": timedelta(hours=24),
         "6h": timedelta(hours=6),
-        "1h": timedelta(hours=1)
+        "1h": timedelta(hours=1) 
     }
 
     if period not in periods:
@@ -238,7 +253,6 @@ async def get_sensor_data_period(period: str):
     data = [{"temperature": doc["temperature"], "humidity": doc["humidity"], "led_state": doc.get("led_state", "Desligado"), "timestamp": doc["timestamp"]} for doc in data_cursor]
 
     return {"data": data}
-
 
 # -------------------- Inicialização do Servidor --------------------
 if __name__ == "__main__":

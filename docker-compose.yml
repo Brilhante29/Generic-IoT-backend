@@ -21,6 +21,15 @@ services:
     networks:
       - iot_network
 
+  mqtt_broker:
+    image: eclipse-mosquitto
+    container_name: mqtt_broker
+    ports:
+      - "1883:1883"  # Expondo a porta padrão do MQTT
+      - "9001:9001"  # Expondo a porta para WebSocket
+    networks:
+      - iot_network
+
 networks:
   iot_network:
     driver: bridge

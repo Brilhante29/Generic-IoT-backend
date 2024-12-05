@@ -20,7 +20,7 @@
     <!-- LED Toggle -->
     <div style="margin-top: 20px;">
         <label class="toggle-switch">
-            <input type="checkbox" onclick="toggleLED(this)">
+            <input type="checkbox" id="ledControl" onclick="toggleLED(this)" {% if not manual_control %}disabled{% endif %}>
             <span class="slider round"></span>
         </label>
         <p id="ledState" style="margin-top: 10px;">LED {{ led_state }}</p>
@@ -33,6 +33,10 @@
             const data = await response.json();
             document.getElementById('temperatura').innerHTML = data.temperature + "°C";
             document.getElementById('umidade').innerHTML = data.humidity + "%";
+
+            // Update LED state and manual control
+            document.getElementById('ledState').innerHTML = "LED " + data.led_state;
+            document.getElementById('ledControl').disabled = !data.manual_control;
         }
 
         setInterval(fetchSensorData, 2000);
